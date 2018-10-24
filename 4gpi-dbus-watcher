@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+
+import subprocess
+
+from pydbus import SystemBus
+from gi.repository import GLib
+
+def set_default_bearer(obj):
+    for path in obj['ActiveConnections']:
+        try:
+            con = bus.get('.NetworkManager', path)
+        except KeyError:
+            continue
+        if con.Type != 'gsm':
+            continue
+        if hasattr(con, "State") and con.State == 1:
+            command = ['/usr/sbin/4gpi-nm-helper', 'set', 'default', con.Id]
+            subprocess.call(command)
+
+bus = SystemBus()
+nm = bus.get(".NetworkManager")
+
+nm.PropertiesChanged.connect(set_default_bearer)
+
+try:
+    GLib.MainLoop().run()
+except KeyboardInterrupt:
+    pass
+
