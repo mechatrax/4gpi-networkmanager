@@ -1,0 +1,52 @@
+_4gpi-nm-helper()
+{
+	local cmds=(
+		'set'
+		'show'
+		'clear'
+	)
+	local exts=(
+		'version'
+		'help'
+	)
+	local cur prev words cword
+	_init_completion || return
+
+	if [ $cword -eq 1 ]
+	then
+		COMPREPLY=( $(compgen -W '${cmds[@]} ${exts[@]}' -- $cur) )
+		return
+	fi
+
+	case $prev in
+	set|show|clear)
+		COMPREPLY=( $(compgen -W 'default' -- $cur) )
+		;;
+	help|version)
+		;;
+	*)
+		local prepre
+		if [ $cword -gt 2 ]; then
+			prepre=${words[$(($cword - 2))]}
+		fi
+		case $prepre in
+		set)
+			local connections
+			local IFS=$'\n'
+			connections=($(ls -b /etc/NetworkManager/system-connections/))
+			COMPREPLY=( $(compgen -W '${connections[@]}' -- $cur) )
+			;;
+		show)
+			COMPREPLY=( $(compgen -W 'apn user password all' -- $cur) )
+			;;
+		-*)
+			COMPREPLY=( $(compgen -W '${cmds[@]}' -- $cur) )
+			;;
+		*)
+			;;
+		esac
+		;;
+	esac
+} &&
+
+complete -F _4gpi-nm-helper 4gpi-nm-helper

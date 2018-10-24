@@ -1,0 +1,4 @@
+./4gpi-nm-helper /usr/sbin/
+./4gpi-dbus-watcher /usr/sbin/
+./4gpi-networkmanager-helper.service /lib/systemd/system/
+./81-4gpi-mm-candidate.rules /lib/udev/rules.d/

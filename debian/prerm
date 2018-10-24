@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -e
+
+if [ -d /run/systemd/system ]; then
+	systemctl --system daemon-reload >/dev/null || true
+fi
+
+if deb-systemd-helper --quiet is-enabled 4gpi-networkmanager-helper.service; then
+	deb-systemd-invoke stop 4gpi-networkmanager-helper.service >/dev/null || true
+fi
+
+#DEBHELPER#
