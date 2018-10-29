@@ -1,12 +1,10 @@
 #!/bin/bash
 
-set -eo pipefail
-
 CONFIG=/etc/default/4gpi
 TIMEOUT=10
 BASE_PATH=/etc/NetworkManager/system-connections/
 
-VERSION="1.0"
+VERSION="1.0.1"
 
 USAGE="Usage: 4gpi-nm-helper COMMAND [PARAM...]
 
@@ -97,19 +95,19 @@ nm_set ()
     return 1
   fi
 
-  apn=$(cat $2 | grep apn | cut -d= -f2)
+  apn=$(cat "$2" | grep apn | cut -d= -f2)
   if [ "$apn" = "" ]
   then
     echo "no apn found"
     return 1
   fi
-  user=$(cat $2 | grep username | cut -d= -f2)
+  user=$(cat "$2" | grep username | cut -d= -f2)
   if [ "$user" = "" ]
   then
     echo "no username found"
     return 1
   fi
-  pass=$(cat $2 | grep password | cut -d= -f2)
+  pass=$(cat "$2" | grep password | cut -d= -f2)
   if [ "$pass" = "" ]
   then
     echo "no password found"
@@ -117,17 +115,16 @@ nm_set ()
   fi
 
   default=($(nm_show $1))
-  if [ "${default[0]}" = "$apn" ] \
-    && [ "${default[1]}" = "$user" ] \
-    && [ "${default[2]}" = "$pass" ]
+  if [ "${default[0]}" != "$apn" ] \
+    || [ "${default[1]}" != "$user" ] \
+    || [ "${default[2]}" != "$pass" ]
   then
-    return 0
+    4gpi_chat "'' AT OK-AT-OK AT+CFUN=4 OK ''"
+    4gpi_chat "'' AT+CGDCONT=1,\\\"IPV4V6\\\",\\\"$apn\\\" OK ''"
+    4gpi_chat "'' AT+CGAUTH=1,3,\\\"$pass\\\",\\\"$user\\\" OK ''"
   fi
 
-  4gpi_chat "'' AT OK-AT-OK AT+CFUN=4 OK ''"
-  4gpi_chat "'' AT+CGDCONT=1,\\\"IPV4V6\\\",\\\"$apn\\\" OK ''"
-  4gpi_chat "'' AT+CGAUTH=1,3,\\\"$pass\\\",\\\"$user\\\" OK ''"
-  4gpi_chat "'' AT+CFUN=1 OK ''"
+  4gpi_chat "'' AT OK-AT-OK AT+CFUN=1 OK ''"
 }
 
 #
@@ -143,7 +140,7 @@ nm_clr ()
   4gpi_chat "'' AT OK-AT-OK AT+CFUN=4 OK ''"
   4gpi_chat "'' AT+CGDCONT=1 OK ''"
   4gpi_chat "'' AT+CGAUTH=1 OK ''"
-  4gpi_chat "'' AT+CFUN=1 OK ''"
+  4gpi_chat "'' AT OK-AT-OK AT+CFUN=1 OK ''"
 }
 
 [ -r $CONFIG ] && . $CONFIG
@@ -153,13 +150,13 @@ nm_clr ()
 #
 case $1 in
 show)
-  nm_show $2 $3
+  nm_show "$2" "$3"
   ;;
 set)
-  nm_set $2 $BASE_PATH/$3
+  nm_set "$2" "$BASE_PATH/$3"
   ;;
 clear)
-  nm_clr $2
+  nm_clr "$2"
   ;;
 version)
   echo "4gpi-nm-helper version $VERSION"
