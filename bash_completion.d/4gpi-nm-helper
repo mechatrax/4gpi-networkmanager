@@ -9,6 +9,11 @@ _4gpi-nm-helper()
 		'version'
 		'help'
 	)
+	local opts=(
+		'apn'
+		'user'
+		'password'
+	)
 	local cur prev words cword
 	_init_completion || return
 
@@ -31,16 +36,23 @@ _4gpi-nm-helper()
 		fi
 		case $prepre in
 		set)
-			local connections
-			local IFS=$'\n'
-			connections=($(ls -b /etc/NetworkManager/system-connections/))
-			COMPREPLY=( $(compgen -W '${connections[@]}' -- $cur) )
+			COMPREPLY=( $(compgen -W 'apn user password' -- $cur) )
 			;;
 		show)
 			COMPREPLY=( $(compgen -W 'apn user password all' -- $cur) )
 			;;
 		-*)
 			COMPREPLY=( $(compgen -W '${cmds[@]}' -- $cur) )
+			;;
+		apn|user|password)
+			for w in "${words[@]}"; do
+				for i in $(seq 0 ${#opts[@]}); do
+					if [ "$w" = "${opts[$i]}" ]; then
+						unset opts[$i]
+					fi
+				done
+			done
+			COMPREPLY=( $(compgen -W '${opts[@]}' -- $cur) )
 			;;
 		*)
 			;;

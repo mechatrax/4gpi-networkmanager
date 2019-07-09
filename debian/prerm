@@ -11,3 +11,5 @@ if deb-systemd-helper --quiet is-enabled 4gpi-networkmanager-helper.service; the
 fi
 
 #DEBHELPER#
+
+exit 0

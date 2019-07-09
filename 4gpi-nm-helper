@@ -2,18 +2,22 @@
 
 CONFIG=/etc/default/4gpi
 TIMEOUT=10
-BASE_PATH=/etc/NetworkManager/system-connections/
 
-VERSION="1.0.1"
+VERSION="2.0"
 
 USAGE="Usage: 4gpi-nm-helper COMMAND [PARAM...]
 
 Commands:
-  set default <CONNECTION_NAME>          set default bearer to <CONNECTION_NAME>
-  show default [apn|user|password|all]   show default bearer information
-  clear default                          clear default bearer
-  version                                display version and exit
-  help                                   display help and exit
+  set default apn <apn> user <user> password <password>
+                                        set default PDP context
+
+  show default {apn|user|password|all}
+                                        show default PDP context
+
+  clear default                         clear default PDP context
+
+  version                               display version and exit
+  help                                  display help and exit
 "
 
 #
@@ -29,9 +33,9 @@ Commands:
 }
 
 #
-# Usage: 4gpi_echat <COMMANDS>
+# Usage: 4gpi_chat_e <COMMANDS>
 #
-4gpi_echat ()
+4gpi_chat_e ()
 {
   local script
 
@@ -57,8 +61,8 @@ nm_show ()
   fi
 
   4gpi_chat "'' AT OK-AT-OK ''"
-  cont=$(4gpi_echat "'' AT+CGDCONT? OK ''" 2>&1)
-  auth=$(4gpi_echat "'' AT+CGAUTH? OK ''" 2>&1)
+  cont=$(4gpi_chat_e "'' AT+CGDCONT? OK ''" 2>&1)
+  auth=$(4gpi_chat_e "'' AT+CGAUTH? OK ''" 2>&1)
 
   apn=$(echo "$cont" | grep "CGDCONT: 1" | cut -d, -f3 | sed -e 's/"//g')
   user=$(echo "$auth" | grep "CGAUTH: 1" | cut -d, -f3 | sed -e 's/"//g')
@@ -81,7 +85,7 @@ nm_show ()
 }
 
 #
-# Usage: nm_set <NAME> <FILE_PATH>
+# Usage: nm_set <NAME> <PARAMS...>
 #
 nm_set ()
 {
@@ -89,38 +93,51 @@ nm_set ()
   local user
   local pass
   local default
+  local params
+
+  apn=""
+  user=""
+  pass=""
+  params=($@)
+  params=(${params[@]:1})
 
   if [ "$1" != "default" ]
   then
     return 1
   fi
 
-  apn=$(cat "$2" | grep apn | cut -d= -f2)
-  if [ "$apn" = "" ]
-  then
-    echo "no apn found"
-    return 1
-  fi
-  user=$(cat "$2" | grep username | cut -d= -f2)
-  if [ "$user" = "" ]
-  then
-    echo "no username found"
-    return 1
-  fi
-  pass=$(cat "$2" | grep password | cut -d= -f2)
-  if [ "$pass" = "" ]
-  then
-    echo "no password found"
-    return 1
-  fi
+  while [ $params ]
+  do
+    case "${params[0]}" in
+      "apn")
+        apn=${params[1]}
+        params=(${params[@]:2})
+        ;;
+      "user")
+        user=${params[1]}
+        params=(${params[@]:2})
+        ;;
+      "password")
+        pass=${params[1]}
+        params=(${params[@]:2})
+        ;;
+      *)
+        echo $apn $user $pass
+        params=(${params[@]:1})
+        ;;
+    esac
+  done
 
-  default=($(nm_show $1))
-  if [ "${default[0]}" != "$apn" ] \
-    || [ "${default[1]}" != "$user" ] \
-    || [ "${default[2]}" != "$pass" ]
+  current=($(nm_show $1))
+  if [ "${current[0]}" != "$apn" ]
   then
     4gpi_chat "'' AT OK-AT-OK AT+CFUN=4 OK ''"
     4gpi_chat "'' AT+CGDCONT=1,\\\"IPV4V6\\\",\\\"$apn\\\" OK ''"
+  fi
+  if [ "${current[1]}" != "$user" ] \
+    || [ "${current[2]}" != "$pass" ]
+  then
+    4gpi_chat "'' AT OK-AT-OK AT+CFUN=4 OK ''"
     4gpi_chat "'' AT+CGAUTH=1,3,\\\"$pass\\\",\\\"$user\\\" OK ''"
   fi
 
@@ -145,27 +162,29 @@ nm_clr ()
 
 [ -r $CONFIG ] && . $CONFIG
 
+args=($@)
+
 #
 # execute command
 #
 case $1 in
-show)
-  nm_show "$2" "$3"
-  ;;
-set)
-  nm_set "$2" "$BASE_PATH/$3"
-  ;;
-clear)
-  nm_clr "$2"
-  ;;
-version)
-  echo "4gpi-nm-helper version $VERSION"
-  ;;
-help)
-  echo "$USAGE"
-  ;;
-*)
-  echo "$USAGE"
-  exit 1
-  ;;
+  show)
+    nm_show "$2" "$3"
+    ;;
+  set)
+    nm_set "$2" "${args[@]:2}"
+    ;;
+  clear)
+    nm_clr "$2"
+    ;;
+  version)
+    echo "4gpi-nm-helper version $VERSION"
+    ;;
+  help)
+    echo "$USAGE"
+    ;;
+  *)
+    echo "$USAGE"
+    exit 1
+    ;;
 esac
