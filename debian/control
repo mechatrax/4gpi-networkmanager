@@ -2,8 +2,8 @@ Source: 4gpi-networkmanager
 Section: net
 Priority: optional
 Maintainer: Masahiro Honda <honda@mechatrax.com>
-Build-Depends: debhelper (>= 10), bash-completion
-Standards-Version: 3.9.8
+Build-Depends: debhelper (>= 12), bash-completion
+Standards-Version: 4.3.0
 Vcs-Git: https://github.com/mechatrax/4gpi-networkmanager.git
 Vcs-browser: https://github.com/mechatrax/4gpi-networkmanager
 Homepage: https://www.mechatrax.com/
@@ -11,8 +11,7 @@ Homepage: https://www.mechatrax.com/
 Package: 4gpi-networkmanager
 Architecture: all
 Conflicts: 4gpi-networkmanager
-Depends: ${misc:Depends}, python3, python3-gi, python3-pydbus, network-manager (>= 1.6.2), modemmanager (>= 1.6.4), libqmi-glib5 (>= 1.20), raspberrypi-kernel (>= 1.20180910-1) | raspberrypi-kernel-mtx (>= 1.20180910-1), 4gpi-utils
-Description: NetworkManager settings for 4GPi
- This package contains udev rules and APN settings for using 4GPi with
+Depends: ${misc:Depends}, python3, python3-gi, python3-dbus, network-manager (>= 1.14), modemmanager (>= 1.10), raspberrypi-kernel (>= 1.20180910-1) | raspberrypi-kernel-mtx (>= 1.20180910-1), 4gpi-utils
+Description: NetworkManager settings and helper tools for 4GPi
+ This package contains udev rules and helper tools for using 4GPi with
  NetworkManager.
- 

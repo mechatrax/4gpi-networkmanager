@@ -1,29 +1,69 @@
 #!/usr/bin/env python3
 
 import subprocess
+import dbus
 
-from pydbus import SystemBus
+from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 
-def set_default_bearer(obj):
-    for path in obj['ActiveConnections']:
+name = 'org.freedesktop.NetworkManager'
+
+def get_context(id):
+    context = { 'apn': "", 'username': "", 'password': "" }
+    
+    proxy = bus.get_object(name, '/org/freedesktop/NetworkManager/Settings')
+    settings = dbus.Interface(proxy, name + '.Settings')
+    connections = settings.ListConnections()
+    
+    for path in connections:
+        con_proxy = bus.get_object(name, path)
+        con_iface = dbus.Interface(con_proxy, name + '.Settings.Connection')
+        con_settings = con_iface.GetSettings()
+        if con_settings['connection']['id'] != id:
+            continue
         try:
-            con = bus.get('.NetworkManager', path)
-        except KeyError:
+            context['apn'] = str(con_settings['gsm']['apn'])
+            context['username'] = str(con_settings['gsm']['username'])
+            con_secrets = con_iface.GetSecrets('gsm')
+            context['password'] = str(con_secrets['gsm']['password'])
+            break
+        except Exception as e:
+            pass
+    
+    return context
+
+def set_default_bearer(ifname, changed, invalidated):
+    if ifname != 'org.freedesktop.NetworkManager':
+        return
+    
+    if not 'ActiveConnections' in changed:
+        return
+    
+    for path in changed['ActiveConnections']:
+        try:
+            ac_proxy = bus.get_object(name, path)
+            ac_iface = dbus.Interface(ac_proxy, 'org.freedesktop.DBus.Properties')
+            ac_props = ac_iface.GetAll(name + '.Connection.Active')
+        except Exception as e:
             continue
-        if con.Type != 'gsm':
+        if ac_props['Type'] != 'gsm':
             continue
-        if hasattr(con, "State") and con.State == 1:
-            command = ['/usr/sbin/4gpi-nm-helper', 'set', 'default', con.Id]
+        if ac_props['State'] == 1:
+            context = get_context(ac_props['Id'])
+            command = ['/usr/sbin/4gpi-nm-helper', 'set', 'default', 'apn', context['apn'], 'user', context['username'], 'password', context['password']]
             subprocess.call(command)
 
-bus = SystemBus()
-nm = bus.get(".NetworkManager")
+DBusGMainLoop(set_as_default=True)
 
-nm.PropertiesChanged.connect(set_default_bearer)
+bus = dbus.SystemBus()
+bus.add_signal_receiver(set_default_bearer, dbus_interface='org.freedesktop.DBus.Properties', signal_name='PropertiesChanged')
+
+loop = GLib.MainLoop()
 
 try:
-    GLib.MainLoop().run()
+    loop.run()
 except KeyboardInterrupt:
     pass
+finally:
+    loop.quit()
 

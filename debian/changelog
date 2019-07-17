@@ -1,6 +1,21 @@
+4gpi-networkmanager (2.0.0) buster; urgency=medium
+
+  * 4gpi-nm-helper:
+    - Set APN settings from command line arguments
+  * 4gpi-dbus-watcher:
+    - Use python3-dbus instead of python3-pydbus
+    - Get APN settings via dbus
+  * debian/changelog: Fix format
+  * debian/control: Update Depends
+  * Update bash-completion
+  * Update debhelper compatibility level to 12
+  * Bump Standards-Version to 4.3.0
+
+ -- Masahiro Honda <honda@mechatrax.com>  Tue, 09 Jul 2019 18:41:44 +0900
+
 4gpi-networkmanager (1.0.1) unstable; urgency=medium
 
-  * 4gpi-nm-helper
+  * 4gpi-nm-helper:
     - Fix problem with whitespaces in the connection name.
     - Fix functionality mode switching process.
 

@@ -22,3 +22,5 @@ if [ -d /run/systemd/system ]; then
 fi
 
 #DEBHELPER#
+
+exit 0

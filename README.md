@@ -7,15 +7,22 @@
 次のファイルがパッケージに含まれています。
 
 ### /usr/sbin/4gpi-dbus-watcher
-4GPi を NetworkManager で使用するために dbus のメッセージを扱う実行ファイルです。
+4GPi の設定に必要な情報を NetworkManager から dbus 経由で取得する実行ファイルです。  
+接続情報が更新された際に 4gpi-nm-helper を呼び出します。
 
 ### /usr/sbin/4gpi-nm-helper
 4GPi を NetworkManager で使用するための設定を行う実行ファイルです。  
 使用可能なパラメータを次に示します。
 
-+ set default _&lt;CONNECTION_NAME&gt;_  
-  4GPi のデフォルトの通信設定を _&lt;CONNECTION_NAME&gt;_ に設定します。  
-  _&lt;CONNECTION_NAME&gt;_ には NetworkManager の設定名を指定します。
++ set default apn _&lt;APN&gt;_ user _&lt;USER&gt;_ password _&lt;PASSWORD&gt;_  
+  4GPi のデフォルトの PDP を設定します。  
+  指定するパラメータは次のとおりです。  
+  - _&lt;APN&gt;_  
+    APN を指定します。
+  - _&lt;USER&gt;_  
+    ユーザー名を指定します。
+  - _&lt;PASSWORD&gt;_  
+    パスワードを指定します。
 
 + show default [apn|user|password|all]  
   4GPi のデフォルト設定の値を表示します。  
@@ -51,4 +58,4 @@
 パッケージの変更履歴を記録したファイルです。
 
 ### /usr/share/doc/4gpi-networkmanager/copyright
-ソースコードの著作権とライセンスを記載したファイルです。
+著作権とライセンスを記載したファイルです。
