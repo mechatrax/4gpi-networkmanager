@@ -14,17 +14,20 @@
 4GPi を NetworkManager で使用するための設定を行う実行ファイルです。  
 使用可能なパラメータを次に示します。
 
-+ set default apn _&lt;APN&gt;_ user _&lt;USER&gt;_ password _&lt;PASSWORD&gt;_  
++ set default apn _&lt;APN&gt;_ user _&lt;USER&gt;_ password _&lt;PASSWORD&gt;_ [type {IP|IPV6|IPV4}]  
   4GPi のデフォルトの PDP を設定します。  
   指定するパラメータは次のとおりです。  
-  - _&lt;APN&gt;_  
+  - apn _&lt;APN&gt;_  
     APN を指定します。
-  - _&lt;USER&gt;_  
+  - user _&lt;USER&gt;_  
     ユーザー名を指定します。
-  - _&lt;PASSWORD&gt;_  
+  - password _&lt;PASSWORD&gt;_  
     パスワードを指定します。
+  - type {IP|IPV6|IPV4V6}  
+    PDP タイプを IP, IPV6, IPV4V6 の中から選んで指定します。  
+    省略した場合は IPV4V6 が指定されます。
 
-+ show default [apn|user|password|all]  
++ show default {apn|user|password|type|all}  
   4GPi のデフォルト設定の値を表示します。  
   表示可能なパラメータは次のとおりです。
   - apn  
@@ -33,8 +36,10 @@
     ユーザー名を表示します。
   - password  
     パスワードを表示します。
+  - type  
+     PDP タイプを表示します。
   - all  
-    APN, ユーザー名, パスワードを表示します。
+    APN, ユーザー名, パスワード, PDP タイプを表示します。
 
 + clear default  
   4GPi のデフォルトの設定を消去します。
