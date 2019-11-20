@@ -9,7 +9,7 @@ from gi.repository import GLib
 name = 'org.freedesktop.NetworkManager'
 
 def get_context(id):
-    context = { 'apn': "", 'username': "", 'password': "" }
+    context = { 'apn': "", 'username': "", 'password': "", 'type': "IPV4V6" }
     
     proxy = bus.get_object(name, '/org/freedesktop/NetworkManager/Settings')
     settings = dbus.Interface(proxy, name + '.Settings')
@@ -26,6 +26,10 @@ def get_context(id):
             context['username'] = str(con_settings['gsm']['username'])
             con_secrets = con_iface.GetSecrets('gsm')
             context['password'] = str(con_secrets['gsm']['password'])
+            if str(con_settings['ipv4']['method']) == "ignore":
+                context['type'] = "IPV6"
+            if str(con_settings['ipv6']['method']) == "ignore":
+                context['type'] = "IP"
             break
         except Exception as e:
             pass
@@ -50,7 +54,13 @@ def set_default_bearer(ifname, changed, invalidated):
             continue
         if ac_props['State'] == 1:
             context = get_context(ac_props['Id'])
-            command = ['/usr/sbin/4gpi-nm-helper', 'set', 'default', 'apn', context['apn'], 'user', context['username'], 'password', context['password']]
+            command = [
+                '/usr/sbin/4gpi-nm-helper', 'set', 'default',
+                'apn', context['apn'],
+                'user', context['username'],
+                'password', context['password'],
+                'type', context['type']
+            ]
             subprocess.call(command)
 
 DBusGMainLoop(set_as_default=True)

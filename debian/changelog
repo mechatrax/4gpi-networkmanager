@@ -1,3 +1,13 @@
+4gpi-networkmanager (2.1.0) buster; urgency=medium
+
+  * 4gpi-nm-helper:
+    - Add option for PDP type
+  * 4gpi-dbus-watcher:
+    - Get IP configuration method when getting APN settings
+  * Update bash-completion
+
+ -- Masahiro Honda <honda@mechatrax.com>  Mon, 11 Nov 2019 18:44:13 +0900
+
 4gpi-networkmanager (2.0.0) buster; urgency=medium
 
   * 4gpi-nm-helper:

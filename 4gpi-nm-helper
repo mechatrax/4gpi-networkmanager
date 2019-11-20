@@ -3,15 +3,15 @@
 CONFIG=/etc/default/4gpi
 TIMEOUT=10
 
-VERSION="2.0"
+VERSION="2.1"
 
 USAGE="Usage: 4gpi-nm-helper COMMAND [PARAM...]
 
 Commands:
-  set default apn <apn> user <user> password <password>
+  set default apn <apn> user <user> password <password> [type {IP|IPV6|IPV4V6}]
                                         set default PDP context
 
-  show default {apn|user|password|all}
+  show default {apn|user|password|type|all}
                                         show default PDP context
 
   clear default                         clear default PDP context
@@ -45,7 +45,7 @@ Commands:
 }
 
 #
-# Usage: nm_show <NAME> [ apn | user | password ]
+# Usage: nm_show <NAME> [ apn | user | password | type ]
 #
 nm_show ()
 {
@@ -54,6 +54,7 @@ nm_show ()
   local apn
   local user
   local pass
+  local type
 
   if [ "$1" != "default" ]
   then
@@ -67,6 +68,7 @@ nm_show ()
   apn=$(echo "$cont" | grep "CGDCONT: 1" | cut -d, -f3 | sed -e 's/"//g')
   user=$(echo "$auth" | grep "CGAUTH: 1" | cut -d, -f3 | sed -e 's/"//g')
   pass=$(echo "$auth" | grep "CGAUTH: 1" | cut -d, -f4 | sed -e 's/"//g')
+  type=$(echo "$cont" | grep "CGDCONT: 1" | cut -d, -f2 | sed -e 's/"//g')
 
   case "$2" in
     "apn")
@@ -78,8 +80,11 @@ nm_show ()
     "password")
       echo $pass
       ;;
+    "type")
+      echo $type
+      ;;
     *)
-      echo $apn $user $pass
+      echo $apn $user $pass $type
       ;;
   esac
 }
@@ -92,12 +97,14 @@ nm_set ()
   local apn
   local user
   local pass
+  local type
   local default
   local params
 
   apn=""
   user=""
   pass=""
+  type="IPV4V6"
   params=($@)
   params=(${params[@]:1})
 
@@ -121,21 +128,24 @@ nm_set ()
         pass=${params[1]}
         params=(${params[@]:2})
         ;;
+      "type")
+        type=${params[1]}
+        params=(${params[@]:2})
+        ;;
       *)
-        echo $apn $user $pass
+        echo $apn $user $pass $type
         params=(${params[@]:1})
         ;;
     esac
   done
 
   current=($(nm_show $1))
-  if [ "${current[0]}" != "$apn" ]
+  if [ "${current[0]}" != "$apn" ] || [ "${current[3]}" != "$type" ]
   then
     4gpi_chat "'' AT OK-AT-OK AT+CFUN=4 OK ''"
-    4gpi_chat "'' AT+CGDCONT=1,\\\"IPV4V6\\\",\\\"$apn\\\" OK ''"
+    4gpi_chat "'' AT+CGDCONT=1,\\\"$type\\\",\\\"$apn\\\" OK ''"
   fi
-  if [ "${current[1]}" != "$user" ] \
-    || [ "${current[2]}" != "$pass" ]
+  if [ "${current[1]}" != "$user" ] || [ "${current[2]}" != "$pass" ]
   then
     4gpi_chat "'' AT OK-AT-OK AT+CFUN=4 OK ''"
     4gpi_chat "'' AT+CGAUTH=1,3,\\\"$pass\\\",\\\"$user\\\" OK ''"
