@@ -1,3 +1,10 @@
+4gpi-networkmanager (2.2.0) buster; urgency=medium
+
+  * 4gpi-networkmanager-helper.service
+    - Add Restart=always in [Service] section
+
+ -- Masahiro Honda <honda@mechatrax.com>  Fri, 22 May 2020 19:05:04 +0900
+
 4gpi-networkmanager (2.1.0) buster; urgency=medium
 
   * 4gpi-nm-helper:
