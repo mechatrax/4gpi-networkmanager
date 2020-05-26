@@ -6,6 +6,7 @@ After=4gpi-setup.service dev-tty4GPI.device
 [Service]
 Type=simple
 ExecStart=/usr/sbin/4gpi-dbus-watcher
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
