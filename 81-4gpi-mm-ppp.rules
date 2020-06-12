@@ -1,0 +1,29 @@
+ACTION!="add|change|move", GOTO="4gpi_mm_candidate_end"
+ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9001", GOTO="4gpi_mm_candidate_go"
+GOTO="4gpi_mm_candidate_end"
+
+LABEL="4gpi_mm_candidate_go"
+
+# WDM port
+KERNEL=="cdc-wdm*", SUBSYSTEM=="usb|usbmisc", ENV{ID_MM_CANDIDATE}="0"
+
+# WWAN port
+KERNEL=="wwan*", SUBSYSTEM=="net", ENV{ID_MM_CANDIDATE}="0"
+
+# DIAG port
+KERNEL=="ttyUSB*", SUBSYSTEM=="tty", ENV{ID_USB_INTERFACE_NUM}=="00", ENV{ID_MM_CANDIDATE}="0"
+
+# NMEA port
+KERNEL=="ttyUSB*", SUBSYSTEM=="tty", ENV{ID_USB_INTERFACE_NUM}=="01", ENV{ID_MM_CANDIDATE}="0"
+
+# AT command port
+KERNEL=="ttyUSB*", SUBSYSTEM=="tty", ENV{ID_USB_INTERFACE_NUM}=="02", ENV{ID_MM_CANDIDATE}="0"
+
+# MODEM port
+KERNEL=="ttyUSB*", SUBSYSTEM=="tty", ENV{ID_USB_INTERFACE_NUM}=="03", ENV{ID_MM_CANDIDATE}="1"
+
+# Audio port
+KERNEL=="ttyUSB*", SUBSYSTEM=="tty", ENV{ID_USB_INTERFACE_NUM}=="04", ENV{ID_MM_CANDIDATE}="0"
+
+LABEL="4gpi_mm_candidate_end"
+

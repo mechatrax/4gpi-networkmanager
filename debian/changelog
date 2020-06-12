@@ -1,3 +1,9 @@
+4gpi-networkmanager (2.3.0) buster; urgency=medium
+
+  * Update udev rules
+
+ -- Masahiro Honda <honda@mechatrax.com>  Tue, 09 Jun 2020 14:27:36 +0900
+
 4gpi-networkmanager (2.2.0) buster; urgency=medium
 
   * 4gpi-networkmanager-helper.service
