@@ -2,5 +2,5 @@
 ./4gpi-dbus-watcher /usr/sbin/
 ./4gpi-networkmanager-helper.service /lib/systemd/system/
 ./81-4gpi-mm-wwan.rules /lib/udev/rules.d/
-./81-4gpi-mm-wwan.rules /usr/share/doc/4gpi-utils/examples/
-./81-4gpi-mm-ppp.rules /usr/share/doc/4gpi-utils/examples/
+./81-4gpi-mm-wwan.rules /usr/share/doc/4gpi-networkmanager/examples/
+./81-4gpi-mm-ppp.rules /usr/share/doc/4gpi-networkmanager/examples/
