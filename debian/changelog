@@ -1,3 +1,9 @@
+4gpi-networkmanager (2.3.1) buster; urgency=medium
+
+  * Fix installation path of examples
+
+ -- Masahiro Honda <honda@mechatrax.com>  Thu, 25 Jun 2020 17:09:06 +0900
+
 4gpi-networkmanager (2.3.0) buster; urgency=medium
 
   * Update udev rules
