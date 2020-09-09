@@ -59,11 +59,14 @@
 ### /lib/udev/rules.d/81-4gpi-mm-wwan.rules
 4GPi を wwan デバイスとして認識させるための設定ファイルです。
 
-### /lib/udev/rules.d/81-4gpi-mm-wwan.rules
-4GPi を ppp デバイスとして認識させるための設定ファイルです。
-
 ### /usr/share/doc/4gpi-networkmanager/changelog.gz
 パッケージの変更履歴を記録したファイルです。
 
 ### /usr/share/doc/4gpi-networkmanager/copyright
 著作権とライセンスを記載したファイルです。
+
+### /usr/share/doc/4gpi-networkmanager/examples/81-4gpi-mm-wwan.rules
+4GPi を wwan デバイスとして認識させるための設定ファイルのサンプルです。
+
+### /usr/share/doc/4gpi-networkmanager/examples/81-4gpi-mm-ppp.rules
+4GPi を ppp デバイスとして認識させるための設定ファイルのサンプルです。
