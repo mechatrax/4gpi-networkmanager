@@ -9,7 +9,13 @@ from gi.repository import GLib
 name = 'org.freedesktop.NetworkManager'
 
 def get_context(id):
-    context = { 'apn': "", 'username': "", 'password': "", 'type': "IPV4V6" }
+    context = { 
+        'apn': "",
+        'username': "",
+        'password': "",
+        'pdp': "IPV4V6",
+        'auth': "3"
+    }
     
     proxy = bus.get_object(name, '/org/freedesktop/NetworkManager/Settings')
     settings = dbus.Interface(proxy, name + '.Settings')
@@ -27,9 +33,17 @@ def get_context(id):
             con_secrets = con_iface.GetSecrets('gsm')
             context['password'] = str(con_secrets['gsm']['password'])
             if str(con_settings['ipv4']['method']) == "ignore":
-                context['type'] = "IPV6"
+                context['pdp'] = "IPV6"
             if str(con_settings['ipv6']['method']) == "ignore":
-                context['type'] = "IP"
+                context['pdp'] = "IP"
+            if not 'ppp' in con_settings:
+                break
+            if ('refuse-chap' in con_settings['ppp'] and
+                    con_settings['ppp']['refuse-chap']):
+                context['auth'] = str(int(context['auth']) & 0x01)
+            if ('refuse-pap' in con_settings['ppp'] and
+                    con_settings['ppp']['refuse-pap']):
+                context['auth'] = str(int(context['auth']) & 0x02)
             break
         except Exception as e:
             pass
@@ -59,7 +73,8 @@ def set_default_bearer(ifname, changed, invalidated):
                 'apn', context['apn'],
                 'user', context['username'],
                 'password', context['password'],
-                'type', context['type']
+                'pdp', context['pdp'],
+                'auth', context['auth']
             ]
             subprocess.call(command)
 

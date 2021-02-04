@@ -14,8 +14,8 @@
 4GPi を NetworkManager で使用するための設定を行う実行ファイルです。  
 使用可能なパラメータを次に示します。
 
-+ set default apn _&lt;APN&gt;_ user _&lt;USER&gt;_ password _&lt;PASSWORD&gt;_ [type {IP|IPV6|IPV4}]  
-  4GPi のデフォルトの PDP を設定します。  
++ set default apn _&lt;APN&gt;_ user _&lt;USER&gt;_ password _&lt;PASSWORD&gt;_ [pdp {IP|IPV6|IPV4}] [auth {0|1|2|3}]  
+  4GPi のデフォルトベアラを設定します。  
   指定するパラメータは次のとおりです。  
   - apn _&lt;APN&gt;_  
     APN を指定します。
@@ -23,11 +23,18 @@
     ユーザー名を指定します。
   - password _&lt;PASSWORD&gt;_  
     パスワードを指定します。
-  - type {IP|IPV6|IPV4V6}  
+  - pdp {IP|IPV6|IPV4V6}  
     PDP タイプを IP, IPV6, IPV4V6 の中から選んで指定します。  
     省略した場合は IPV4V6 が指定されます。
+  - auth {0|1|2|3}  
+    認証方式を選択します。  
+    それぞれの値と認証方式の対応は次のとおりです。  
+      0 : none  
+      1 : PAP  
+      2 : CHAP  
+      3 : PAP or CHAP
 
-+ show default {apn|user|password|type|all}  
++ show default {apn|user|password|pdp|auth|all}  
   4GPi のデフォルト設定の値を表示します。  
   表示可能なパラメータは次のとおりです。
   - apn  
@@ -36,8 +43,10 @@
     ユーザー名を表示します。
   - password  
     パスワードを表示します。
-  - type  
+  - pdp  
      PDP タイプを表示します。
+  - auth  
+     認証方式を表示します。
   - all  
     APN, ユーザー名, パスワード, PDP タイプを表示します。
 
