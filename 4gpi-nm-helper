@@ -3,7 +3,7 @@
 CONFIG=/etc/default/4gpi
 TIMEOUT=10
 
-VERSION="3.0"
+VERSION="2.4"
 
 USAGE="Usage: 4gpi-nm-helper COMMAND [PARAMETERS...]
 
