@@ -13,12 +13,18 @@ _4gpi-nm-helper()
 		'apn'
 		'user'
 		'password'
-		'type'
+		'pdp'
 	)
-	local types=(
+	local pdp_types=(
 		'IP'
 		'IPV6'
 		'IPV4V6'
+	)
+	local auth_types=(
+		'0'
+		'1'
+		'2'
+		'3'
 	)
 	local cur prev words cword
 	_init_completion || return
@@ -33,8 +39,11 @@ _4gpi-nm-helper()
 	set|show|clear)
 		COMPREPLY=( $(compgen -W 'default' -- $cur) )
 		;;
-	type)
-		COMPREPLY=( $(compgen -W '${types[@]}' -- $cur) )
+	pdp)
+		COMPREPLY=( $(compgen -W '${pdp_types[@]}' -- $cur) )
+		;;
+	auth)
+		COMPREPLY=( $(compgen -W '${auth_types[@]}' -- $cur) )
 		;;
 	help|version)
 		;;
@@ -45,10 +54,10 @@ _4gpi-nm-helper()
 		fi
 		case $prepre in
 		set)
-			COMPREPLY=( $(compgen -W 'apn user password type' -- $cur) )
+			COMPREPLY=( $(compgen -W 'apn user password pdp auth' -- $cur) )
 			;;
 		show)
-			COMPREPLY=( $(compgen -W 'apn user password type all' -- $cur) )
+			COMPREPLY=( $(compgen -W 'apn user password pdp auth all' -- $cur) )
 			;;
 		-*)
 			COMPREPLY=( $(compgen -W '${cmds[@]}' -- $cur) )

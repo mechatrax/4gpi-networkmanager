@@ -1,3 +1,13 @@
+4gpi-networkmanager (2.4.0) buster; urgency=medium
+
+  * 4gpi-nm-helper:
+    - Add option for authentication type
+  * 4gpi-dbus-watcher:
+    - Get authentication method when getting APN settings
+  * Update bash-completion
+
+ -- Masahiro Honda <honda@mechatrax.com>  Thu, 04 Feb 2021 17:13:52 +0900
+
 4gpi-networkmanager (2.3.1) buster; urgency=medium
 
   * Fix installation path of examples

@@ -3,21 +3,35 @@
 CONFIG=/etc/default/4gpi
 TIMEOUT=10
 
-VERSION="2.1"
+VERSION="3.0"
 
-USAGE="Usage: 4gpi-nm-helper COMMAND [PARAM...]
+USAGE="Usage: 4gpi-nm-helper COMMAND [PARAMETERS...]
 
 Commands:
-  set default apn <apn> user <user> password <password> [type {IP|IPV6|IPV4V6}]
-                                        set default PDP context
+  set default apn <apn> user <user> password <password> [pdp ...] [auth ...]
+    set default bearer
+  Parameters:
+    apn <apn>                        set <apn> to APN
+    user <user>                      set <user> to user name
+    password <password>              set <password> to password
+    pdp {IP|IPV6|IPV4V6}             set PDP type (optional) (default:IPV4V6)
+    auth {0|1|2|3}                   set authentication type (optional)
+      0: none
+      1: PAP
+      2: CHAP
+      3: PAP or CHAP (default)
 
-  show default {apn|user|password|type|all}
-                                        show default PDP context
+  show default {apn|user|password|pdp|auth|all}
+    show default bearer
 
-  clear default                         clear default PDP context
+  clear default
+    clear default bearer
 
-  version                               display version and exit
-  help                                  display help and exit
+  version
+    display version and exit
+
+  help
+    display help and exit
 "
 
 #
@@ -45,16 +59,17 @@ Commands:
 }
 
 #
-# Usage: nm_show <NAME> [ apn | user | password | type ]
+# Usage: show_config <NAME> [ apn | user | password | pdp | auth ]
 #
-nm_show ()
+show_config ()
 {
-  local cont
-  local auth
+  local gdcont
+  local gauth
   local apn
   local user
   local pass
-  local type
+  local pdp
+  local auth
 
   if [ "$1" != "default" ]
   then
@@ -62,17 +77,21 @@ nm_show ()
   fi
 
   4gpi_chat "'' AT OK-AT-OK ''"
-  cont=$(4gpi_chat_e "'' AT+CGDCONT? OK ''" 2>&1)
-  auth=$(4gpi_chat_e "'' AT+CGAUTH? OK ''" 2>&1)
+  gdcont=$(4gpi_chat_e "'' AT+CGDCONT? OK ''" 2>&1)
+  gauth=$(4gpi_chat_e "'' AT+CGAUTH? OK ''" 2>&1)
 
-  apn=$(echo "$cont" | grep "CGDCONT: 1" | cut -d, -f3 | sed -e 's/"//g')
-  user=$(echo "$auth" | grep "CGAUTH: 1" | cut -d, -f3 | sed -e 's/"//g')
-  pass=$(echo "$auth" | grep "CGAUTH: 1" | cut -d, -f4 | sed -e 's/"//g')
-  type=$(echo "$cont" | grep "CGDCONT: 1" | cut -d, -f2 | sed -e 's/"//g')
+  apn=$(echo "$gdcont" | grep "CGDCONT: 1" | cut -d, -f3 | sed -e 's/"//g')
+  auth=$(echo "$gauth" | grep "CGAUTH: 1" | cut -d, -f2 | sed -e 's/"//g')
+  user=$(echo "$gauth" | grep "CGAUTH: 1" | cut -d, -f3 | sed -e 's/"//g')
+  pass=$(echo "$gauth" | grep "CGAUTH: 1" | cut -d, -f4 | sed -e 's/"//g')
+  pdp=$(echo "$gdcont" | grep "CGDCONT: 1" | cut -d, -f2 | sed -e 's/"//g')
 
   case "$2" in
     "apn")
       echo $apn
+      ;;
+    "auth")
+      echo $auth
       ;;
     "user")
       echo $user
@@ -80,31 +99,33 @@ nm_show ()
     "password")
       echo $pass
       ;;
-    "type")
-      echo $type
+    "pdp" | "type")
+      echo $pdp
       ;;
     *)
-      echo $apn $user $pass $type
+      echo $apn $user $pass $pdp $auth
       ;;
   esac
 }
 
 #
-# Usage: nm_set <NAME> <PARAMS...>
+# Usage: set_config <NAME> <PARAMS...>
 #
-nm_set ()
+set_config ()
 {
   local apn
   local user
   local pass
-  local type
+  local pdp
+  local auth
   local default
   local params
 
   apn=""
   user=""
   pass=""
-  type="IPV4V6"
+  pdp="IPV4V6"
+  auth="3"
   params=($@)
   params=(${params[@]:1})
 
@@ -128,36 +149,42 @@ nm_set ()
         pass=${params[1]}
         params=(${params[@]:2})
         ;;
-      "type")
-        type=${params[1]}
+      "pdp" | "type")
+        pdp=${params[1]}
+        params=(${params[@]:2})
+        ;;
+      "auth")
+        auth=${params[1]}
         params=(${params[@]:2})
         ;;
       *)
-        echo $apn $user $pass $type
-        params=(${params[@]:1})
+        return 1
         ;;
     esac
   done
 
-  current=($(nm_show $1))
-  if [ "${current[0]}" != "$apn" ] || [ "${current[3]}" != "$type" ]
+  current=($(show_config $1))
+  if [ "${current[0]}" != "$apn" ] \
+    || [ "${current[3]}" != "$pdp" ] \
+    || [ "${current[4]}" != "$auth" ]
   then
     4gpi_chat "'' AT OK-AT-OK AT+CFUN=4 OK ''"
-    4gpi_chat "'' AT+CGDCONT=1,\\\"$type\\\",\\\"$apn\\\" OK ''"
+    4gpi_chat "'' AT+CGDCONT=1,\\\"$pdp\\\",\\\"$apn\\\" OK ''"
   fi
-  if [ "${current[1]}" != "$user" ] || [ "${current[2]}" != "$pass" ]
+  if [ "${current[1]}" != "$user" ] \
+    || [ "${current[2]}" != "$pass" ]
   then
     4gpi_chat "'' AT OK-AT-OK AT+CFUN=4 OK ''"
-    4gpi_chat "'' AT+CGAUTH=1,3,\\\"$pass\\\",\\\"$user\\\" OK ''"
+    4gpi_chat "'' AT+CGAUTH=1,$auth,\\\"$pass\\\",\\\"$user\\\" OK ''"
   fi
 
   4gpi_chat "'' AT OK-AT-OK AT+CFUN=1 OK ''"
 }
 
 #
-# Usage: nm_clr <NAME>
+# Usage: clear_config <NAME>
 #
-nm_clr ()
+clear_config ()
 {
   if [ "$1" != "default" ]
   then
@@ -179,13 +206,13 @@ args=($@)
 #
 case $1 in
   show)
-    nm_show "$2" "$3"
+    show_config "$2" "$3"
     ;;
   set)
-    nm_set "$2" "${args[@]:2}"
+    set_config "$2" "${args[@]:2}"
     ;;
   clear)
-    nm_clr "$2"
+    clear_config "$2"
     ;;
   version)
     echo "4gpi-nm-helper version $VERSION"
