@@ -3,7 +3,7 @@
 CONFIG=/etc/default/4gpi
 TIMEOUT=10
 
-VERSION="2.4"
+VERSION="2.5"
 
 USAGE="Usage: 4gpi-nm-helper COMMAND [PARAMETERS...]
 
@@ -165,14 +165,14 @@ set_config ()
 
   current=($(show_config $1))
   if [ "${current[0]}" != "$apn" ] \
-    || [ "${current[3]}" != "$pdp" ] \
-    || [ "${current[4]}" != "$auth" ]
+    || [ "${current[3]}" != "$pdp" ]
   then
     4gpi_chat "'' AT OK-AT-OK AT+CFUN=4 OK ''"
     4gpi_chat "'' AT+CGDCONT=1,\\\"$pdp\\\",\\\"$apn\\\" OK ''"
   fi
   if [ "${current[1]}" != "$user" ] \
-    || [ "${current[2]}" != "$pass" ]
+    || [ "${current[2]}" != "$pass" ] \
+    || [ "${current[4]}" != "$auth" ]
   then
     4gpi_chat "'' AT OK-AT-OK AT+CFUN=4 OK ''"
     4gpi_chat "'' AT+CGAUTH=1,$auth,\\\"$pass\\\",\\\"$user\\\" OK ''"

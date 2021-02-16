@@ -1,3 +1,10 @@
+4gpi-networkmanager (2.5.0) buster; urgency=medium
+
+  * 4gpi-nm-helper
+    - Fix authentication type update process
+
+ -- Masahiro Honda <honda@mechatrax.com>  Fri, 12 Feb 2021 17:41:03 +0900
+
 4gpi-networkmanager (2.4.1) buster; urgency=medium
 
   * Fix version string
