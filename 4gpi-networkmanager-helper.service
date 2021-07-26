@@ -1,7 +1,7 @@
 [Unit]
 Description=NetworkManager Helper for 4GPi
-Requires=dev-tty4GPI.device
-After=4gpi-setup.service dev-tty4GPI.device
+Wants=dev-tty4GPI.device
+After=dev-tty4GPI.device
 
 [Service]
 Type=simple

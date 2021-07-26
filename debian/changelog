@@ -1,3 +1,16 @@
+4gpi-networkmanager (2.5.1) bullseye; urgency=medium
+
+  * debian/compat: Deleted
+  * debian/control
+    - Change Build-Depends to debhelper-compat from debhelper
+    - Bump Standards-Version 4.5.1
+  * 4gpi-networkmanager-helper.service
+    - Change Units dependencies
+  * 81-4gpi-mm-wwan.rules
+    - Deleted setting related to mtu
+
+ -- Yuta Kiyonaga <kiyonaga@mechatrax.com>  Tue, 20 Jul 2021 07:48:16 +0000
+
 4gpi-networkmanager (2.5.0) buster; urgency=medium
 
   * 4gpi-nm-helper
