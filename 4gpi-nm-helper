@@ -3,23 +3,23 @@
 CONFIG=/etc/default/4gpi
 TIMEOUT=10
 
-VERSION="2.5"
+VERSION="3.0"
 
 USAGE="Usage: 4gpi-nm-helper COMMAND [PARAMETERS...]
 
 Commands:
-  set default apn <apn> user <user> password <password> [pdp ...] [auth ...]
+  set default apn=<apn> [user=<user>] [password=<password>] [pdp=...] [auth=...]
     set default bearer
   Parameters:
-    apn <apn>                        set <apn> to APN
-    user <user>                      set <user> to user name
-    password <password>              set <password> to password
-    pdp {IP|IPV6|IPV4V6}             set PDP type (optional) (default:IPV4V6)
-    auth {0|1|2|3}                   set authentication type (optional)
+    apn=<apn>                set <apn> to APN
+    user=<user>              set <user> to user name (optional default blank)
+    password=<password>      set <password> to password (optional default blank)
+    pdp={IP|IPV6|IPV4V6}     set PDP type (optional default:IPV4V6)
+    auth={0|1|2|3}           set authentication type (optional default:3)
       0: none
       1: PAP
       2: CHAP
-      3: PAP or CHAP (default)
+      3: PAP or CHAP
 
   show default {apn|user|password|pdp|auth|all}
     show default bearer
@@ -77,35 +77,47 @@ show_config ()
   fi
 
   4gpi_chat "'' AT OK-AT-OK ''"
-  gdcont=$(4gpi_chat_e "'' AT+CGDCONT? OK ''" 2>&1)
-  gauth=$(4gpi_chat_e "'' AT+CGAUTH? OK ''" 2>&1)
+  gdcont=$(4gpi_chat_e "'' AT+CGDCONT? OK ''" 2>&1 | grep "CGDCONT: 1")
+  gauth=$(4gpi_chat_e "'' AT+CGAUTH? OK ''" 2>&1 | grep "CGAUTH: 1")
 
-  apn=$(echo "$gdcont" | grep "CGDCONT: 1" | cut -d, -f3 | sed -e 's/"//g')
-  auth=$(echo "$gauth" | grep "CGAUTH: 1" | cut -d, -f2 | sed -e 's/"//g')
-  user=$(echo "$gauth" | grep "CGAUTH: 1" | cut -d, -f3 | sed -e 's/"//g')
-  pass=$(echo "$gauth" | grep "CGAUTH: 1" | cut -d, -f4 | sed -e 's/"//g')
-  pdp=$(echo "$gdcont" | grep "CGDCONT: 1" | cut -d, -f2 | sed -e 's/"//g')
+  apn=$(echo "$gdcont" | cut -d, -f3 | sed -e 's/"//g')
+  auth=$(echo "$gauth" | cut -d, -f2 | sed -e 's/"//g')
+  user=$(echo "$gauth" | cut -d, -f3 | sed -e 's/"//g')
+  pass=$(echo "$gauth" | cut -d, -f4 | sed -e 's/"//g')
+  pdp=$(echo "$gdcont" | cut -d, -f2 | sed -e 's/"//g')
 
-  case "$2" in
-    "apn")
-      echo $apn
-      ;;
-    "auth")
-      echo $auth
-      ;;
-    "user")
-      echo $user
-      ;;
-    "password")
-      echo $pass
-      ;;
-    "pdp" | "type")
-      echo $pdp
-      ;;
-    *)
-      echo $apn $user $pass $pdp $auth
-      ;;
-  esac
+  params=($@)
+  params=(${params[@]:1})
+
+  if [ ${#params[@]} -eq 0 ]
+  then
+    params=("all")
+  fi
+
+  while [ $params ]
+  do
+    case "${params[0]}" in
+      apn)
+        echo $apn
+        ;;
+      auth)
+        echo $auth
+        ;;
+      user)
+        echo $user
+        ;;
+      password)
+        echo $pass
+        ;;
+      pdp|type)
+        echo $pdp
+        ;;
+      *)
+        echo \"$apn\" \"$user\" \"$pass\" \"$pdp\" $auth
+        ;;
+    esac
+    params=(${params[@]:1})
+  done
 }
 
 #
@@ -137,23 +149,43 @@ set_config ()
   while [ $params ]
   do
     case "${params[0]}" in
-      "apn")
+      apn=*)
+        apn="$(echo ${params[0]} | sed -e 's/^apn=//')"
+        params=(${params[@]:1})
+        ;;
+      apn)
         apn=${params[1]}
         params=(${params[@]:2})
         ;;
-      "user")
+      user=*)
+        user="$(echo ${params[0]} | sed -e 's/^user=//')"
+        params=(${params[@]:1})
+        ;;
+      user)
         user=${params[1]}
         params=(${params[@]:2})
         ;;
-      "password")
+      password=*)
+        pass="$(echo ${params[0]} | sed -e 's/^password=//')"
+        params=(${params[@]:1})
+        ;;
+      password)
         pass=${params[1]}
         params=(${params[@]:2})
         ;;
-      "pdp" | "type")
+      pdp=*|type=*)
+        pdp="$(echo ${params[0]} | sed -e 's/^pdp=//' -e 's/^type=//')"
+        params=(${params[@]:1})
+        ;;
+      pdp|type)
         pdp=${params[1]}
         params=(${params[@]:2})
         ;;
-      "auth")
+      auth=*)
+        auth="$(echo ${params[0]} | sed -e 's/^auth=//')"
+        params=(${params[@]:1})
+        ;;
+      auth)
         auth=${params[1]}
         params=(${params[@]:2})
         ;;
@@ -164,18 +196,23 @@ set_config ()
   done
 
   current=($(show_config $1))
-  if [ "${current[0]}" != "$apn" ] \
-    || [ "${current[3]}" != "$pdp" ]
+  if [ "${current[0]}" != "\"$apn\"" ] \
+    || [ "${current[3]}" != "\"$pdp\"" ]
   then
     4gpi_chat "'' AT OK-AT-OK AT+CFUN=4 OK ''"
     4gpi_chat "'' AT+CGDCONT=1,\\\"$pdp\\\",\\\"$apn\\\" OK ''"
   fi
-  if [ "${current[1]}" != "$user" ] \
-    || [ "${current[2]}" != "$pass" ] \
+  if [ "${current[1]}" != "\"$user\"" ] \
+    || [ "${current[2]}" != "\"$pass\"" ] \
     || [ "${current[4]}" != "$auth" ]
   then
     4gpi_chat "'' AT OK-AT-OK AT+CFUN=4 OK ''"
-    4gpi_chat "'' AT+CGAUTH=1,$auth,\\\"$pass\\\",\\\"$user\\\" OK ''"
+    if [ "$pass" != "" ] && [ "$user" != "" ] && [ "$apn" != "" ]
+    then
+        4gpi_chat "'' AT+CGAUTH=1,$auth,\\\"$pass\\\",\\\"$user\\\" OK ''"
+    else
+        4gpi_chat "'' AT+CGAUTH=1 OK ''"
+    fi
   fi
 
   4gpi_chat "'' AT OK-AT-OK AT+CFUN=1 OK ''"
@@ -206,7 +243,7 @@ args=($@)
 #
 case $1 in
   show)
-    show_config "$2" "$3"
+    show_config "$2" "${args[@]:2}"
     ;;
   set)
     set_config "$2" "${args[@]:2}"
@@ -225,3 +262,4 @@ case $1 in
     exit 1
     ;;
 esac
+
