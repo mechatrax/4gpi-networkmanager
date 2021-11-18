@@ -1,3 +1,9 @@
+4gpi-networkmanager (3.0.1) bullseye; urgency=medium
+
+  * Fix version string
+
+ -- Yuta Kiyonaga <kiyonaga@mechatrax.com>  Thu, 18 Nov 2021 10:27:31 +0000
+
 4gpi-networkmanager (3.0.0) buster; urgency=medium
 
   * Fix problem with empty username and password
