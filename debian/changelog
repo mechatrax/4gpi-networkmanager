@@ -1,3 +1,10 @@
+4gpi-networkmanager (3.0.0) buster; urgency=medium
+
+  * Fix problem with empty username and password
+  * Fix problem with PDP type IPV6
+
+ -- Masahiro Honda <honda@mechatrax.com>  Thu, 21 Oct 2021 21:53:32 +0900
+
 4gpi-networkmanager (2.5.1) bullseye; urgency=medium
 
   * debian/compat: Deleted
