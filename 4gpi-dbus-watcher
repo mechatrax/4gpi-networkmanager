@@ -9,18 +9,18 @@ from gi.repository import GLib
 name = 'org.freedesktop.NetworkManager'
 
 def get_context(id):
-    context = { 
+    context = {
         'apn': "",
         'username': "",
         'password': "",
         'pdp': "IPV4V6",
         'auth': "3"
     }
-    
+
     proxy = bus.get_object(name, '/org/freedesktop/NetworkManager/Settings')
     settings = dbus.Interface(proxy, name + '.Settings')
     connections = settings.ListConnections()
-    
+
     for path in connections:
         con_proxy = bus.get_object(name, path)
         con_iface = dbus.Interface(con_proxy, name + '.Settings.Connection')
@@ -28,11 +28,16 @@ def get_context(id):
         if con_settings['connection']['id'] != id:
             continue
         try:
-            context['apn'] = str(con_settings['gsm']['apn'])
-            context['username'] = str(con_settings['gsm']['username'])
             con_secrets = con_iface.GetSecrets('gsm')
-            context['password'] = str(con_secrets['gsm']['password'])
-            if str(con_settings['ipv4']['method']) == "ignore":
+            if 'password' in con_secrets['gsm']:
+                context['password'] = str(con_secrets['gsm']['password'])
+        except Exception as e:
+            pass
+        try:
+            context['apn'] = str(con_settings['gsm']['apn'])
+            if 'username' in con_settings['gsm']:
+                context['username'] = str(con_settings['gsm']['username'])
+            if str(con_settings['ipv4']['method']) == "disabled":
                 context['pdp'] = "IPV6"
             if str(con_settings['ipv6']['method']) == "ignore":
                 context['pdp'] = "IP"
@@ -47,16 +52,16 @@ def get_context(id):
             break
         except Exception as e:
             pass
-    
+
     return context
 
 def set_default_bearer(ifname, changed, invalidated):
     if ifname != 'org.freedesktop.NetworkManager':
         return
-    
+
     if not 'ActiveConnections' in changed:
         return
-    
+
     for path in changed['ActiveConnections']:
         try:
             ac_proxy = bus.get_object(name, path)
@@ -70,11 +75,11 @@ def set_default_bearer(ifname, changed, invalidated):
             context = get_context(ac_props['Id'])
             command = [
                 '/usr/sbin/4gpi-nm-helper', 'set', 'default',
-                'apn', context['apn'],
-                'user', context['username'],
-                'password', context['password'],
-                'pdp', context['pdp'],
-                'auth', context['auth']
+                'apn=' + context['apn'],
+                'user=' + context['username'],
+                'password=' + context['password'],
+                'pdp=' + context['pdp'],
+                'auth=' + context['auth']
             ]
             subprocess.call(command)
 
@@ -91,4 +96,3 @@ except KeyboardInterrupt:
     pass
 finally:
     loop.quit()
-
