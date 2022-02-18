@@ -7,9 +7,6 @@ LABEL="4gpi_mm_candidate_go"
 # WDM port
 KERNEL=="cdc-wdm*", SUBSYSTEM=="usb|usbmisc", ENV{ID_MM_CANDIDATE}="1"
 
-# WWAN port
-KERNEL=="wwan*", SUBSYSTEM=="net", ENV{ID_MM_CANDIDATE}="1""
-
 # DIAG port
 KERNEL=="ttyUSB*", SUBSYSTEM=="tty", ENV{ID_USB_INTERFACE_NUM}=="00", ENV{ID_MM_CANDIDATE}="0"
 
