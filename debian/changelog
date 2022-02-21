@@ -1,3 +1,9 @@
+4gpi-networkmanager (3.0.2) bullseye; urgency=medium
+
+  * Fix udev rules
+
+ -- Yuta Kiyonaga <kiyonaga@mechatrax.com>  Mon, 21 Feb 2022 14:43:41 +0900
+
 4gpi-networkmanager (3.0.1) bullseye; urgency=medium
 
   * Port from buster 
