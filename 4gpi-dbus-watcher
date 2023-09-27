@@ -1,92 +1,232 @@
 #!/usr/bin/env python3
 
-import subprocess
 import dbus
 
 from dbus.mainloop.glib import DBusGMainLoop
-from gi.repository import GLib
 
-name = 'org.freedesktop.NetworkManager'
+import gi
+gi.require_version("ModemManager", "1.0")
+gi.require_version("NM", "1.0")
+gi.require_version('Qmi', '1.0')
+from gi.repository import Gio, GLib, ModemManager, NM, Qmi
 
-def get_context(id):
-    context = {
-        'apn': "",
-        'username': "",
-        'password': "",
-        'pdp': "IPV4V6",
-        'auth': "3"
-    }
+import sys
 
-    proxy = bus.get_object(name, '/org/freedesktop/NetworkManager/Settings')
-    settings = dbus.Interface(proxy, name + '.Settings')
-    connections = settings.ListConnections()
+sys.path.append('/usr/share/4gpi-networkmanager')
 
-    for path in connections:
-        con_proxy = bus.get_object(name, path)
-        con_iface = dbus.Interface(con_proxy, name + '.Settings.Connection')
-        con_settings = con_iface.GetSettings()
-        if con_settings['connection']['id'] != id:
-            continue
+import qmi_helper
+
+
+def ip_type_to_pdp_type(ip):
+    if ip == ModemManager.BearerIpFamily.IPV4:
+        return Qmi.WdsPdpType.IPV4
+    if ip == ModemManager.BearerIpFamily.IPV6:
+        return Qmi.WdsPdpType.IPV6
+    if ip == ModemManager.BearerIpFamily.IPV4V6:
+        return Qmi.WdsPdpType.IPV4_OR_IPV6
+    
+    return None
+
+
+def allowed_auth_to_authentication(auth):
+    if auth == ModemManager.BearerAllowedAuth.NONE:
+        return Qmi.WdsAuthentication.NONE
+    if auth == ModemManager.BearerAllowedAuth.PAP:
+        return Qmi.WdsAuthentication.PAP
+    if auth == ModemManager.BearerAllowedAuth.CHAP:
+        return Qmi.WdsAuthentication.CHAP
+    if auth == ModemManager.BearerAllowedAuth.PAP | ModemManager.BearerAllowedAuth.CHAP:
+        return Qmi.WdsAuthentication.PAP | Qmi.WdsAuthentication.CHAP
+    
+    return Qmi.WdsAuthentication.UNKNOWN
+    
+
+def settings_is_equal_to_bearer(settings, bearer):
+    if settings.get_apn_name() != bearer.get_apn():
+        return False
+    if settings.get_pdp_type() != ip_type_to_pdp_type(bearer.get_ip_type()):
+        return False
+    if settings.get_authentication() != allowed_auth_to_authentication(bearer.get_allowed_auth()):
+        return False
+    if settings.get_username() != bearer.get_user():
+        return False
+    if settings.get_password() != bearer.get_password():
+        return False
+    
+    return True
+
+
+def setup_bearer(conn):
+    bearer = ModemManager.BearerProperties.new()
+    
+    gsm_setting = conn.get_setting_gsm()
+    apn = gsm_setting.get_apn()
+    if not apn:
+        apn = ''
+    bearer.set_apn(apn)
+    user = gsm_setting.get_username()
+    if not user:
+        user = ''
+    bearer.set_user(user)
+    
+    if 'gsm' in conn.need_secrets():
+        gsm_secrets = conn.get_secrets('gsm')
+        if 'password' in gsm_secrets['gsm']:
+            passwd = gsm_secrets['gsm']['password']
+    else:
+        passwd = ''
+    bearer.set_password(passwd)
+    
+    ip4_conf = conn.get_setting_ip4_config()
+    ip6_conf = conn.get_setting_ip6_config()
+    if ip4_conf.get_method() == 'ignore' or ip4_conf.get_method() == 'disabled':
+        bearer.set_ip_type(ModemManager.BearerIpFamily.IPV6)
+    elif ip6_conf.get_method() == 'ignore' or ip6_conf.get_method() == 'disabled':
+        bearer.set_ip_type(ModemManager.BearerIpFamily.IPV4)
+    else:
+        bearer.set_ip_type(ModemManager.BearerIpFamily.IPV4V6)
+   
+    auth = ModemManager.BearerAllowedAuth.PAP | ModemManager.BearerAllowedAuth.CHAP
+    ppp_setting = conn.get_setting_ppp()
+    if ppp_setting:
+        if ppp_setting.get_refuse_chap() and ppp_setting.get_refuse_pap():
+            auth = ModemManager.BearerAllowedAuth.NONE
+        elif ppp_setting.get_refuse_chap():
+            auth = ModemManager.BearerAllowedAuth.PAP
+        elif ppp_setting.get_refuse_pap():
+            auth = ModemManager.BearerAllowedAuth.CHAP
+    bearer.set_allowed_auth(auth)
+    
+    return bearer
+
+
+def update_settings(modem_3gpp, bearer, iface):
+    default_bearer_exists = False
+    
+    qdev_helper = qmi_helper.QmiDeviceHelper('/dev/' + iface)
+    qdev_helper.open_sync()
+    try:
+        wds_helper = qmi_helper.QmiClientWdsHelper(qdev_helper.get_device())
+        wds_helper.client_allocate_sync()
         try:
-            con_secrets = con_iface.GetSecrets('gsm')
-            if 'password' in con_secrets['gsm']:
-                context['password'] = str(con_secrets['gsm']['password'])
-        except Exception as e:
-            pass
-        try:
-            context['apn'] = str(con_settings['gsm']['apn'])
-            if 'username' in con_settings['gsm']:
-                context['username'] = str(con_settings['gsm']['username'])
-            if str(con_settings['ipv4']['method']) == "disabled":
-                context['pdp'] = "IPV6"
-            if str(con_settings['ipv6']['method']) == "ignore":
-                context['pdp'] = "IP"
-            if not 'ppp' in con_settings:
+            prof_list = wds_helper.get_profile_list_sync()
+            for prof in prof_list:
+                if prof.profile_index != 1:
+                    continue
+                try:
+                    default_settings = wds_helper.get_default_settings_sync()
+                except:
+                    break
+                if settings_is_equal_to_bearer(default_settings, bearer):
+                    return
+                default_bearer_exists = True
                 break
-            if ('refuse-chap' in con_settings['ppp'] and
-                    con_settings['ppp']['refuse-chap']):
-                context['auth'] = str(int(context['auth']) & 0x01)
-            if ('refuse-pap' in con_settings['ppp'] and
-                    con_settings['ppp']['refuse-pap']):
-                context['auth'] = str(int(context['auth']) & 0x02)
-            break
-        except Exception as e:
-            pass
+            
+            dms_helper = qmi_helper.QmiClientDmsHelper(qdev_helper.get_device())
+            dms_helper.client_allocate_sync()
+            try: 
+                apn = bearer.get_apn()
+                pdp = ip_type_to_pdp_type(bearer.get_ip_type())
+                user = bearer.get_user()
+                passwd = bearer.get_password()
+                auth = allowed_auth_to_authentication(bearer.get_allowed_auth())
+                
+                dms_helper.operating_mode_lowpower_sync()
+                try:
+                    if default_bearer_exists:
+                        wds_helper.modify_profile_sync(apn, pdp, user, passwd, auth, 1)
+                    else:
+                        wds_helper.create_profile_sync(apn, pdp, user, passwd, auth)
+                    
+                    modem_3gpp.set_initial_eps_bearer_settings_sync(bearer)
+                finally:
+                    dms_helper.operating_mode_online_sync()
+            finally:
+                dms_helper.client_release_sync()
+        finally:
+            wds_helper.client_release_sync()
+    finally:        
+        qdev_helper.close_sync()
 
-    return context
 
-def set_default_bearer(ifname, changed, invalidated):
-    if ifname != 'org.freedesktop.NetworkManager':
+def nm_device_properties_changed_handler(ifname, changed, invalidated):
+    if not 'ActiveConnection' in changed:
         return
 
-    if not 'ActiveConnections' in changed:
+    nm_client = NM.Client.new(None)
+    path = changed['ActiveConnection']
+    ac = nm_client.get_object_by_path(path)
+    
+    if type(ac) != NM.ActiveConnection:
         return
+    if ac.get_connection_type() != 'gsm':
+        return
+    if ac.get_state() != NM.ActiveConnectionState.ACTIVATING:
+        return
+    
+    conn = nm_client.get_connection_by_id(ac.get_id())
+    
+    mm_manager = ModemManager.Manager.new_sync(
+        Gio.bus_get_sync(Gio.BusType.SYSTEM, None),
+        Gio.DBusObjectManagerClientFlags.DO_NOT_AUTO_START,
+        None)
+    objs = mm_manager.get_objects()
+    for d in ac.get_devices():
+        for obj in objs:
+            modem = obj.get_modem()
+            if modem.get_primary_port() != d.get_iface():
+                continue
+            if modem.get_state() == ModemManager.ModemState.DISABLED:
+                return
+            update_settings(obj.get_modem_3gpp(), setup_bearer(conn), d.get_iface())
 
-    for path in changed['ActiveConnections']:
-        try:
-            ac_proxy = bus.get_object(name, path)
-            ac_iface = dbus.Interface(ac_proxy, 'org.freedesktop.DBus.Properties')
-            ac_props = ac_iface.GetAll(name + '.Connection.Active')
-        except Exception as e:
+
+def mm_modem_properties_changed_handler(ifname, changed, invalidated):
+    if not 'State'in changed:
+        return
+    
+    if changed['State'] != ModemManager.ModemState.ENABLED:
+        return
+    
+    mm_manager = ModemManager.Manager.new_sync(
+        Gio.bus_get_sync(Gio.BusType.SYSTEM, None),
+        Gio.DBusObjectManagerClientFlags.DO_NOT_AUTO_START,
+        None)
+    objs = mm_manager.get_objects()
+    for obj in objs:
+        modem = obj.get_modem()
+        if modem.get_state() != ModemManager.ModemState.ENABLED:
             continue
-        if ac_props['Type'] != 'gsm':
-            continue
-        if ac_props['State'] == 1:
-            context = get_context(ac_props['Id'])
-            command = [
-                '/usr/sbin/4gpi-nm-helper', 'set', 'default',
-                'apn=' + context['apn'],
-                'user=' + context['username'],
-                'password=' + context['password'],
-                'pdp=' + context['pdp'],
-                'auth=' + context['auth']
-            ]
-            subprocess.call(command)
+        nm_client = NM.Client.new(None)
+        for ac in nm_client.get_active_connections():
+            if type(ac) != NM.ActiveConnection:
+                continue
+            if ac.get_connection_type() != 'gsm':
+                continue
+            if ac.get_state() != NM.ActiveConnectionState.ACTIVATING:
+                continue
+            for d in ac.get_devices():
+                if modem.get_primary_port() != d.get_iface():
+                    continue
+                conn = nm_client.get_connection_by_id(ac.get_id())
+                update_settings(obj.get_modem_3gpp(), setup_bearer(conn), modem.get_primary_port())
+
 
 DBusGMainLoop(set_as_default=True)
 
 bus = dbus.SystemBus()
-bus.add_signal_receiver(set_default_bearer, dbus_interface='org.freedesktop.DBus.Properties', signal_name='PropertiesChanged')
+bus.add_signal_receiver(
+    nm_device_properties_changed_handler,
+    dbus_interface='org.freedesktop.DBus.Properties',
+    signal_name='PropertiesChanged',
+    arg0='org.freedesktop.NetworkManager.Device'
+)
+bus.add_signal_receiver(
+    mm_modem_properties_changed_handler,
+    dbus_interface='org.freedesktop.DBus.Properties',
+    signal_name='PropertiesChanged',
+    arg0='org.freedesktop.ModemManager1.Modem'
+)
 
 loop = GLib.MainLoop()
 
@@ -96,3 +236,4 @@ except KeyboardInterrupt:
     pass
 finally:
     loop.quit()
+

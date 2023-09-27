@@ -1,7 +1,6 @@
 [Unit]
 Description=NetworkManager Helper for 4GPi
-Wants=dev-tty4GPI.device
-After=dev-tty4GPI.device
+Before=NetworkManager.service
 
 [Service]
 Type=simple

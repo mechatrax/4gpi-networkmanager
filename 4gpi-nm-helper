@@ -3,26 +3,20 @@
 CONFIG=/etc/default/4gpi
 TIMEOUT=10
 
-VERSION="3.0"
+VERSION="4.0"
 
 USAGE="Usage: 4gpi-nm-helper COMMAND [PARAMETERS...]
 
 Commands:
-  set default apn=<apn> [user=<user>] [password=<password>] [pdp=...] [auth=...]
-    set default bearer
-  Parameters:
-    apn=<apn>                set <apn> to APN
-    user=<user>              set <user> to user name (optional default blank)
-    password=<password>      set <password> to password (optional default blank)
-    pdp={IP|IPV6|IPV4V6}     set PDP type (optional default:IPV4V6)
-    auth={0|1|2|3}           set authentication type (optional default:3)
-      0: none
-      1: PAP
-      2: CHAP
-      3: PAP or CHAP
-
   show default {apn|user|password|pdp|auth|all}
     show default bearer
+  Parameters:
+    apn                show APN
+    user               show user name
+    password           show password
+    pdp                show PDP type {IP|IPV6|IPV4V6}
+    auth               show authentication type {none|PAP|CHAP|PAP or CHAP}
+    all                show "apn" "user" "password" "pdp" "auth"
 
   clear default
     clear default bearer
@@ -70,6 +64,7 @@ show_config ()
   local pass
   local pdp
   local auth
+  local AUTH_PROTO=("none" "PAP" "CHAP" "PAP or CHAP")
 
   if [ "$1" != "default" ]
   then
@@ -101,7 +96,7 @@ show_config ()
         echo $apn
         ;;
       auth)
-        echo $auth
+        echo ${AUTH_PROTO[$auth]}
         ;;
       user)
         echo $user
@@ -113,109 +108,11 @@ show_config ()
         echo $pdp
         ;;
       *)
-        echo \"$apn\" \"$user\" \"$pass\" \"$pdp\" $auth
+        echo \"$apn\" \"$user\" \"$pass\" \"$pdp\" \"${AUTH_PROTO[$auth]}\"
         ;;
     esac
     params=(${params[@]:1})
   done
-}
-
-#
-# Usage: set_config <NAME> <PARAMS...>
-#
-set_config ()
-{
-  local apn
-  local user
-  local pass
-  local pdp
-  local auth
-  local default
-  local params
-
-  apn=""
-  user=""
-  pass=""
-  pdp="IPV4V6"
-  auth="3"
-  params=($@)
-  params=(${params[@]:1})
-
-  if [ "$1" != "default" ]
-  then
-    return 1
-  fi
-
-  while [ $params ]
-  do
-    case "${params[0]}" in
-      apn=*)
-        apn="$(echo ${params[0]} | sed -e 's/^apn=//')"
-        params=(${params[@]:1})
-        ;;
-      apn)
-        apn=${params[1]}
-        params=(${params[@]:2})
-        ;;
-      user=*)
-        user="$(echo ${params[0]} | sed -e 's/^user=//')"
-        params=(${params[@]:1})
-        ;;
-      user)
-        user=${params[1]}
-        params=(${params[@]:2})
-        ;;
-      password=*)
-        pass="$(echo ${params[0]} | sed -e 's/^password=//')"
-        params=(${params[@]:1})
-        ;;
-      password)
-        pass=${params[1]}
-        params=(${params[@]:2})
-        ;;
-      pdp=*|type=*)
-        pdp="$(echo ${params[0]} | sed -e 's/^pdp=//' -e 's/^type=//')"
-        params=(${params[@]:1})
-        ;;
-      pdp|type)
-        pdp=${params[1]}
-        params=(${params[@]:2})
-        ;;
-      auth=*)
-        auth="$(echo ${params[0]} | sed -e 's/^auth=//')"
-        params=(${params[@]:1})
-        ;;
-      auth)
-        auth=${params[1]}
-        params=(${params[@]:2})
-        ;;
-      *)
-        return 1
-        ;;
-    esac
-  done
-
-  current=($(show_config $1))
-  if [ "${current[0]}" != "\"$apn\"" ] \
-    || [ "${current[3]}" != "\"$pdp\"" ]
-  then
-    4gpi_chat "'' AT OK-AT-OK AT+CFUN=4 OK ''"
-    4gpi_chat "'' AT+CGDCONT=1,\\\"$pdp\\\",\\\"$apn\\\" OK ''"
-  fi
-  if [ "${current[1]}" != "\"$user\"" ] \
-    || [ "${current[2]}" != "\"$pass\"" ] \
-    || [ "${current[4]}" != "$auth" ]
-  then
-    4gpi_chat "'' AT OK-AT-OK AT+CFUN=4 OK ''"
-    if [ "$pass" != "" ] && [ "$user" != "" ] && [ "$apn" != "" ]
-    then
-        4gpi_chat "'' AT+CGAUTH=1,$auth,\\\"$pass\\\",\\\"$user\\\" OK ''"
-    else
-        4gpi_chat "'' AT+CGAUTH=1 OK ''"
-    fi
-  fi
-
-  4gpi_chat "'' AT OK-AT-OK AT+CFUN=1 OK ''"
 }
 
 #
@@ -238,18 +135,21 @@ clear_config ()
 
 args=($@)
 
+cfg="default"
+if [ "$2" != "" ]
+then
+  cfg=$2
+fi
+
 #
 # execute command
 #
 case $1 in
   show)
-    show_config "$2" "${args[@]:2}"
-    ;;
-  set)
-    set_config "$2" "${args[@]:2}"
+    show_config "$cfg" "${args[@]:2}"
     ;;
   clear)
-    clear_config "$2"
+    clear_config "$cfg"
     ;;
   version)
     echo "4gpi-nm-helper version $VERSION"
@@ -258,6 +158,7 @@ case $1 in
     echo "$USAGE"
     ;;
   *)
+    echo -ne "4gpi-nm-helper version $VERSION\n\n"
     echo "$USAGE"
     exit 1
     ;;

@@ -68,6 +68,9 @@
 ### /lib/udev/rules.d/81-4gpi-mm-wwan.rules
 4GPi を wwan デバイスとして認識させるための設定ファイルです。
 
+### /usr/share/4gpi-networkmanager/qmi_helper.py
+モデムを QMI で制御するためのヘルパクラスが実装されたファイルです。
+
 ### /usr/share/doc/4gpi-networkmanager/changelog.gz
 パッケージの変更履歴を記録したファイルです。
 
