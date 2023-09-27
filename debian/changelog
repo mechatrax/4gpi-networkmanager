@@ -1,3 +1,18 @@
+4gpi-networkmanager (4.0.0) bookworm; urgency=medium
+
+  * Use QMI to control the modem
+  * debian/control
+    - Add Uploaders
+    - Bump Standards-Version to 4.6.2
+  * debian/install
+    - Add qmi_helper installation
+  * debian/postrm
+    - Remove pycache
+  * 4gpi-networkmanager-helper.service
+    - Change service dependency
+
+ -- Yuta Kiyonaga <kiyonaga@mechatrax.com>  Wed, 27 Sep 2023 14:49:52 +0900
+
 4gpi-networkmanager (3.0.2) bullseye; urgency=medium
 
   * Fix udev rules

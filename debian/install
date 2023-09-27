@@ -4,3 +4,4 @@
 ./81-4gpi-mm-wwan.rules /lib/udev/rules.d/
 ./81-4gpi-mm-wwan.rules /usr/share/doc/4gpi-networkmanager/examples/
 ./81-4gpi-mm-ppp.rules /usr/share/doc/4gpi-networkmanager/examples/
+./qmi_helper.py /usr/share/4gpi-networkmanager/

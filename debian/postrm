@@ -19,6 +19,10 @@ if [ "$1" = "purge" ]; then
 	fi
 fi
 
+if [ "$1" = "purge" ]; then
+  rm -rf /usr/share/4gpi-networkmanager/__pycache__ || true
+fi
+
 #DEBHELPER#
 
 exit 0
