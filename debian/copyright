@@ -1,9 +1,10 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: 4gpi-networkmanager
+Upstream-Contact: https://github.com/mechatrax/4gpi-networkmanager/issues
 Source: https://github.com/mechatrax/4gpi-networkmanager
 
 Files: *
-Copyright: 2018 MechaTracks Co., Ltd. <info@mechatrax.com>
+Copyright: 2018 MechaTracks Co., Ltd.
 License: MIT
 
 License: MIT

@@ -1,3 +1,9 @@
+4gpi-networkmanager (4.0.0.1) bookworm; urgency=medium
+
+  * debian/copyright: Update contact information
+
+ -- Yuta Kiyonaga <kiyonaga@mechatrax.com>  Fri, 08 Dec 2023 11:48:00 +0900
+
 4gpi-networkmanager (4.0.0) bookworm; urgency=medium
 
   * Use QMI to control the modem
