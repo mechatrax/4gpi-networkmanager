@@ -1,3 +1,10 @@
+4gpi-networkmanager (3.0.2+deb11u1) bullseye; urgency=low
+
+  * debian/copyright: Update contact information
+  * debian/control: Add Uploaders
+
+ -- Masahiro Honda <honda@mechatrax.com>  Mon, 11 Dec 2023 18:11:44 +0900
+
 4gpi-networkmanager (3.0.2) bullseye; urgency=medium
 
   * Fix udev rules
