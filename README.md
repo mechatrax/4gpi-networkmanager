@@ -42,10 +42,10 @@
 ### /usr/share/bash-completion/completions/4gpi-nm-helper
 4gpi-nm-helper のコマンド補完を行うための設定ファイルです。
 
-### /lib/systemd/system/4gpi-networkmanager-helper.service
+### /usr/lib/systemd/system/4gpi-networkmanager-helper.service
 4GPi を NetworkManager で使用するために設定の補助を行うサービスの設定ファイルです。
 
-### /lib/udev/rules.d/81-4gpi-mm-wwan.rules
+### /usr/lib/udev/rules.d/81-4gpi-mm-wwan.rules
 4GPi を wwan デバイスとして認識させるための設定ファイルです。
 
 ### /usr/share/4gpi-networkmanager/qmi_helper.py
